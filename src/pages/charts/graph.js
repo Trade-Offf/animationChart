@@ -48,6 +48,9 @@ const Graph = () => {
         d.Date = d3.timeParse("%Y-%m-%d")(d.Date);
         d.Close = +d.Close;
       });
+      // 初始化收益峰值和亏损峰值
+      let maxReturn = -Infinity;
+      let minReturn = Infinity;
 
       // 获取数据的日期范围
       const purchaseIndexStart = 0; // 第一行
@@ -55,7 +58,7 @@ const Graph = () => {
       // 计算每天的持有金值
       const holdingData = calculateHoldingValue(
         data,
-        10000,
+        500000,
         purchaseIndexStart
       );
 
@@ -76,6 +79,9 @@ const Graph = () => {
           d3.max(holdingData, (d) => d.holdingValue),
         ])
         .range([height - marginBottom, marginTop]);
+      // 创建x轴和y轴的网格线
+      const xAxisGrid = d3.axisBottom(xScale).tickSize(-height).tickFormat("");
+      const yAxisGrid = d3.axisLeft(yScale).tickSize(-width).tickFormat("");
 
       // 创建一个线生成器
       const line = d3
@@ -91,14 +97,14 @@ const Graph = () => {
             .append("path")
             .datum([d, d]) // 初始时，线段的开始点和结束点都是当前数据点
             .attr("fill", "none")
-            .attr("stroke", d.holdingValue > 10000 ? "red" : "#066E4A") // 根据holdingValue的值来设置线段的颜色
+            .attr("stroke", d.holdingValue > 500000 ? "#F23645" : "#089981") // 根据holdingValue的值来设置线段的颜色
             .attr("stroke-width", 3)
             .attr("d", line);
         }
       });
 
       // 在svg中添加一个圆圈和一个文本元素
-      let circle = svg.append("circle").attr("r", 5).attr("fill", "red");
+      let circle = svg.append("circle").attr("r", 5).attr("fill", "#F23645");
 
       let text = svg
         .append("text")
@@ -117,8 +123,8 @@ const Graph = () => {
         );
         // 更新收益率的文本内容
         d3.select("#returnText")
-          .text(`收益率：${(latestData.returnRate * 100).toFixed(2)}%`)
-          .attr("fill", latestData.returnRate > 0 ? "red" : "#066E4A");
+          .text(`当前收益率：${(latestData.returnRate * 100).toFixed(2)}%`)
+          .attr("fill", latestData.returnRate > 0 ? "#F23645" : "#089981");
 
         if (index < holdingData.length - 1) {
           paths[index]
@@ -136,7 +142,10 @@ const Graph = () => {
             .duration(50)
             .attr("cx", xScale(latestData.Date))
             .attr("cy", yScale(latestData.holdingValue))
-            .attr("fill", latestData.holdingValue > 10000 ? "red" : "#066E4A");
+            .attr(
+              "fill",
+              latestData.holdingValue > 500000 ? "#F23645" : "#089981"
+            );
 
           // 更新文本的内容和位置
           text
@@ -145,11 +154,28 @@ const Graph = () => {
             .attr("x", xScale(latestData.Date) + 10) // 在这里添加一个偏移量
             .attr("y", yScale(latestData.holdingValue))
             .text(Math.floor(latestData.holdingValue)) // 使用Math.floor()函数取整
-            .attr("fill", latestData.holdingValue > 10000 ? "red" : "#066E4A");
+            .attr(
+              "fill",
+              latestData.holdingValue > 500000 ? "#F23645" : "#089981"
+            );
+
+          // 更新收益峰值和亏损峰值
+          if (latestData.returnRate > maxReturn) {
+            maxReturn = latestData.returnRate;
+            d3.select("#maxReturnText")
+              .text(`最高收益：${(maxReturn * 100).toFixed(2)}%`)
+              .attr("fill", "#F23645");
+          }
+          if (latestData.returnRate < minReturn) {
+            minReturn = latestData.returnRate;
+            d3.select("#minReturnText")
+              .text(`最大回撤：${(minReturn * 100).toFixed(2)}%`)
+              .attr("fill", "#089981");
+          }
         } else {
           lineTimer.stop();
         }
-      }, 50); // 设置定时器的间隔时间
+      }, 25); // 设置定时器的间隔时间
 
       // 添加图表的表头
       svg
@@ -159,7 +185,7 @@ const Graph = () => {
         .attr("text-anchor", "middle") // 设置文本的锚点为中心，这样文本就会在指定的坐标上居中
         .attr("font-size", "28px") // 设置字体大小
         .attr("font-weight", "bold") // 设置字体粗细
-        .text("假如你两年前买了 10000 元 Alibaba(美股)"); // 设置文本的内容
+        .text("假如你两年前，梭哈 50w 买入阿里巴巴美股"); // 设置文本的内容
 
       // 添加x轴
       svg
@@ -181,7 +207,26 @@ const Graph = () => {
         .call(d3.axisLeft(yScale))
         .attr("font-weight", "bold")
         .style("font-size", "20px"); // 设置字体大小为20px
+      // 添加x轴的网格线
+      svg
+        .append("g")
+        .attr("class", "grid")
+        .attr("stroke", "#F2F3F3") // 设置网格线的颜色
+        .attr("stroke-opacity", "0.1") // 设置网格线的透明度
+        .attr(
+          "transform",
+          "translate(" + marginLeft + "," + (height + marginTop) + ")"
+        )
+        .call(xAxisGrid);
 
+      // 添加y轴的网格线
+      svg
+        .append("g")
+        .attr("class", "grid")
+        .attr("stroke", "#F2F3F3") // 设置网格线的颜色
+        .attr("stroke-opacity", "0.1") // 设置网格线的透明度
+        .attr("transform", "translate(" + marginLeft + "," + marginTop + ")")
+        .call(yAxisGrid);
       // 添加时间的文本元素
       svg
         .append("text")
@@ -199,6 +244,28 @@ const Graph = () => {
         .attr("id", "returnText") // 设置id，以便后续更新文本的内容
         .attr("x", width - marginRight) // 设置文本的x坐标为图表的右边
         .attr("y", marginTop + 40) // 设置文本的y坐标为图表的顶部，再向下偏移20像素
+        .attr("text-anchor", "end") // 设置文本的锚点为结束，这样文本就会在指定的坐标上右对齐
+        .attr("font-size", "20px") // 设置字体大小
+        .attr("font-weight", "bold") // 设置字体粗细
+        .text(""); // 初始时，文本的内容为空
+
+      // 添加收益峰值的文本元素
+      svg
+        .append("text")
+        .attr("id", "maxReturnText") // 设置id，以便后续更新文本的内容
+        .attr("x", width - marginRight) // 设置文本的x坐标为图表的右边
+        .attr("y", marginTop + 640) // 设置文本的y坐标为图表的顶部，再向下偏移50像素
+        .attr("text-anchor", "end") // 设置文本的锚点为结束，这样文本就会在指定的坐标上右对齐
+        .attr("font-size", "20px") // 设置字体大小
+        .attr("font-weight", "bold") // 设置字体粗细
+        .text(""); // 初始时，文本的内容为空
+
+      // 添加亏损峰值的文本元素
+      svg
+        .append("text")
+        .attr("id", "minReturnText") // 设置id，以便后续更新文本的内容
+        .attr("x", width - marginRight) // 设置文本的x坐标为图表的右边
+        .attr("y", marginTop + 670) // 设置文本的y坐标为图表的顶部，再向下偏移80像素
         .attr("text-anchor", "end") // 设置文本的锚点为结束，这样文本就会在指定的坐标上右对齐
         .attr("font-size", "20px") // 设置字体大小
         .attr("font-weight", "bold") // 设置字体粗细
