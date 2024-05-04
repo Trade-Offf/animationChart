@@ -42,7 +42,7 @@ const Graph = () => {
 
   useEffect(() => {
     // 加载.csv文件
-    d3.csv("/alibaba.csv").then((data) => {
+    d3.csv("/XiaoMi.csv").then((data) => {
       // 将日期和价格转换为正确的类型
       data.forEach((d) => {
         d.Date = d3.timeParse("%Y-%m-%d")(d.Date);
@@ -58,7 +58,7 @@ const Graph = () => {
       // 计算每天的持有金值
       const holdingData = calculateHoldingValue(
         data,
-        500000,
+        100000,
         purchaseIndexStart
       );
 
@@ -97,7 +97,7 @@ const Graph = () => {
             .append("path")
             .datum([d, d]) // 初始时，线段的开始点和结束点都是当前数据点
             .attr("fill", "none")
-            .attr("stroke", d.holdingValue > 500000 ? "#F23645" : "#089981") // 根据holdingValue的值来设置线段的颜色
+            .attr("stroke", d.holdingValue > 100000 ? "#F23645" : "#089981") // 根据holdingValue的值来设置线段的颜色
             .attr("stroke-width", 3)
             .attr("d", line);
         }
@@ -144,7 +144,7 @@ const Graph = () => {
             .attr("cy", yScale(latestData.holdingValue))
             .attr(
               "fill",
-              latestData.holdingValue > 500000 ? "#F23645" : "#089981"
+              latestData.holdingValue > 100000 ? "#F23645" : "#089981"
             );
 
           // 更新文本的内容和位置
@@ -156,7 +156,7 @@ const Graph = () => {
             .text(Math.floor(latestData.holdingValue)) // 使用Math.floor()函数取整
             .attr(
               "fill",
-              latestData.holdingValue > 500000 ? "#F23645" : "#089981"
+              latestData.holdingValue > 100000 ? "#F23645" : "#089981"
             );
 
           // 更新收益峰值和亏损峰值
@@ -185,7 +185,7 @@ const Graph = () => {
         .attr("text-anchor", "middle") // 设置文本的锚点为中心，这样文本就会在指定的坐标上居中
         .attr("font-size", "28px") // 设置字体大小
         .attr("font-weight", "bold") // 设置字体粗细
-        .text("假如你两年前，梭哈 50w 买入阿里巴巴美股"); // 设置文本的内容
+        .text("假如你一年前花 10 万买入小米（港股）"); // 设置文本的内容
 
       // 添加x轴
       svg

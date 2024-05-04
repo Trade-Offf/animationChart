@@ -6,7 +6,7 @@ export default function Home() {
     <div className="charts">
       <Graph />
       {/* 写一个水印 */}
-      <div className="watermark">@狂炫冰美式</div>
+      <div className="watermark">@数据系魔法师</div>
     </div>
   );
 }
